@@ -1,5 +1,9 @@
 pipeline {
   agent any
+  environment {
+    MAVEN_USER = credentials('jenkins-nexus-maven-user')
+    MAVEN_PASS = credentials('jenkins-nexus-maven-pass')
+  }
   stages {
     stage('Build') {
       steps {
