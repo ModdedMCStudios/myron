@@ -7,13 +7,13 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.model.ModelProviderContext;
 import net.fabricmc.fabric.api.client.model.ModelResourceProvider;
 import net.fabricmc.fabric.api.client.model.ModelVariantProvider;
-import net.minecraft.client.render.model.UnbakedModel;
-import net.minecraft.client.render.model.json.ModelTransformation;
-import net.minecraft.client.render.model.json.Transformation;
-import net.minecraft.client.util.ModelIdentifier;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
+import net.minecraft.client.renderer.block.model.ItemTransform;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.GsonHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -22,8 +22,8 @@ import java.io.Reader;
 
 public class ObjLoader extends AbstractObjLoader implements ModelResourceProvider, ModelVariantProvider {
     private static final Gson GSON = (new GsonBuilder())
-            .registerTypeAdapter(ModelTransformation.class, new ModelTransformDeserializer())
-            .registerTypeAdapter(Transformation.class, new TransformDeserializer())
+            .registerTypeAdapter(ItemTransforms.class, new ModelTransformDeserializer())
+            .registerTypeAdapter(ItemTransform.class, new TransformDeserializer())
             .create();
 
     private final ResourceManager resourceManager;
@@ -34,35 +34,35 @@ public class ObjLoader extends AbstractObjLoader implements ModelResourceProvide
 
 
     @Override
-    public @Nullable UnbakedModel loadModelResource(Identifier identifier, ModelProviderContext modelProviderContext) {
-        return loadModel(this.resourceManager, identifier, ModelTransformation.NONE, true);
+    public @Nullable UnbakedModel loadModelResource(ResourceLocation identifier, ModelProviderContext modelProviderContext) {
+        return loadModel(this.resourceManager, identifier, ItemTransforms.NO_TRANSFORMS, true);
     }
 
     @Override
-    public @Nullable UnbakedModel loadModelVariant(ModelIdentifier modelIdentifier, ModelProviderContext modelProviderContext) {
-        Identifier resource = new Identifier(
+    public @Nullable UnbakedModel loadModelVariant(ModelResourceLocation modelIdentifier, ModelProviderContext modelProviderContext) {
+        ResourceLocation resource = new ResourceLocation(
                 modelIdentifier.getNamespace(),
                 "models/item/" + modelIdentifier.getPath () + ".json");
 
-        if (!modelIdentifier.getVariant().equals("inventory") || !this.resourceManager.containsResource(resource)) {
+        if (!modelIdentifier.getVariant().equals("inventory") || !this.resourceManager.hasResource(resource)) {
             return null;
         }
 
         try (Reader reader = new InputStreamReader(this.resourceManager.getResource(resource).getInputStream())) {
-            JsonObject rawModel = JsonHelper.deserialize(reader);
+            JsonObject rawModel = GsonHelper.parse(reader);
 
             JsonElement model = rawModel.get("model");
             if (!(model instanceof JsonPrimitive) || !((JsonPrimitive) model).isString()) {
                 return null;
             }
 
-            Identifier modelPath = new Identifier(model.getAsString());
-            ModelTransformation transformation = this.getTransformation(rawModel);
+            ResourceLocation modelPath = new ResourceLocation(model.getAsString());
+            ItemTransforms transformation = this.getTransformation(rawModel);
 
             boolean isSideLit = true;
 
             if (rawModel.has("gui_light")) {
-                isSideLit = JsonHelper.getString(rawModel, "gui_light").equals("side");
+                isSideLit = GsonHelper.getAsString(rawModel, "gui_light").equals("side");
             }
 
             return this.loadModel(this.resourceManager, modelPath, transformation, isSideLit);
@@ -72,36 +72,36 @@ public class ObjLoader extends AbstractObjLoader implements ModelResourceProvide
         }
     }
 
-    private ModelTransformation getTransformation(JsonObject rawModel) throws IOException {
+    private ItemTransforms getTransformation(JsonObject rawModel) throws IOException {
         if (rawModel.has("display")) {
-            JsonObject rawTransform = JsonHelper.getObject(rawModel, "display");
-            return GSON.fromJson(rawTransform, ModelTransformation.class);
+            JsonObject rawTransform = GsonHelper.getAsJsonObject(rawModel, "display");
+            return GSON.fromJson(rawTransform, ItemTransforms.class);
         } else if (rawModel.has("parent")) {
-            Identifier parent = new Identifier(JsonHelper.getString(rawModel, "parent"));
-            parent = new Identifier(parent.getNamespace(), "models/" + parent.getPath() + ".json");
+            ResourceLocation parent = new ResourceLocation(GsonHelper.getAsString(rawModel, "parent"));
+            parent = new ResourceLocation(parent.getNamespace(), "models/" + parent.getPath() + ".json");
             return this.getTransformation(parent);
         } else {
-            return ModelTransformation.NONE;
+            return ItemTransforms.NO_TRANSFORMS;
         }
     }
 
-    private ModelTransformation getTransformation(Identifier model) throws IOException {
-        if (this.resourceManager.containsResource(model)) {
+    private ItemTransforms getTransformation(ResourceLocation model) throws IOException {
+        if (this.resourceManager.hasResource(model)) {
             Reader reader = new InputStreamReader(this.resourceManager.getResource(model).getInputStream());
-            return getTransformation(JsonHelper.deserialize(reader));
+            return getTransformation(GsonHelper.parse(reader));
         } else {
-            return ModelTransformation.NONE;
+            return ItemTransforms.NO_TRANSFORMS;
         }
     }
 
     @Environment(EnvType.CLIENT)
-    public static class ModelTransformDeserializer extends ModelTransformation.Deserializer {
+    public static class ModelTransformDeserializer extends ItemTransforms.Deserializer {
         public ModelTransformDeserializer() {
             super();
         }
     }
     @Environment(EnvType.CLIENT)
-    public static class TransformDeserializer extends Transformation.Deserializer {
+    public static class TransformDeserializer extends ItemTransform.Deserializer {
         public TransformDeserializer() {
             super();
         }

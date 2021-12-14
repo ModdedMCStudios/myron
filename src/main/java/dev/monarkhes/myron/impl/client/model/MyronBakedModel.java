@@ -4,16 +4,16 @@ import dev.monarkhes.myron.impl.client.Myron;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.render.model.json.ModelOverrideList;
-import net.minecraft.client.render.model.json.ModelTransformation;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.ItemOverrides;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -23,13 +23,13 @@ import java.util.function.Supplier;
 
 public class MyronBakedModel implements BakedModel, FabricBakedModel {
     private final Mesh mesh;
-    private final ModelTransformation transformation;
-    private final Sprite sprite;
+    private final ItemTransforms transformation;
+    private final TextureAtlasSprite sprite;
     private final boolean isSideLit;
 
     private List<BakedQuad> backupQuads = null;
 
-    public MyronBakedModel(Mesh mesh, ModelTransformation transformation, Sprite sprite, boolean isSideLit) {
+    public MyronBakedModel(Mesh mesh, ItemTransforms transformation, TextureAtlasSprite sprite, boolean isSideLit) {
         this.mesh = mesh;
         this.transformation = transformation;
         this.sprite = sprite;
@@ -37,11 +37,11 @@ public class MyronBakedModel implements BakedModel, FabricBakedModel {
     }
 
     @Override
-    public void emitBlockQuads(BlockRenderView blockRenderView, BlockState blockState, BlockPos blockPos, Supplier<Random> supplier, RenderContext renderContext) {
+    public void emitBlockQuads(BlockAndTintGetter blockRenderView, BlockState blockState, BlockPos blockPos, Supplier<Random> supplier, RenderContext renderContext) {
         if (this.mesh != null) {
             renderContext.meshConsumer().accept(mesh);
         } else {
-            Myron.LOGGER.warn("Mesh is null while emitting block quads for block {}", blockState.getBlock().getName().asString());
+            Myron.LOGGER.warn("Mesh is null while emitting block quads for block {}", blockState.getBlock().getName().getContents());
         }
     }
 
@@ -50,7 +50,7 @@ public class MyronBakedModel implements BakedModel, FabricBakedModel {
         if (this.mesh != null) {
             renderContext.meshConsumer().accept(mesh);
         } else {
-            Myron.LOGGER.warn("Mesh is null while emitting block quads for item {}", itemStack.getItem().getName().asString());
+            Myron.LOGGER.warn("Mesh is null while emitting block quads for item {}", itemStack.getItem().getDescription().getContents());
         }
     }
 
@@ -73,33 +73,33 @@ public class MyronBakedModel implements BakedModel, FabricBakedModel {
     }
 
     @Override
-    public boolean hasDepth() {
+    public boolean isGui3d() {
         return false;
     }
 
     @Override
-    public boolean isSideLit() {
+    public boolean usesBlockLight() {
         return this.isSideLit;
     }
 
     @Override
-    public boolean isBuiltin() {
+    public boolean isCustomRenderer() {
         return false;
     }
 
     @Override
-    public Sprite getSprite() {
+    public TextureAtlasSprite getParticleIcon() {
         return this.sprite;
     }
 
     @Override
-    public ModelTransformation getTransformation() {
+    public ItemTransforms getTransforms() {
         return this.transformation;
     }
 
     @Override
-    public ModelOverrideList getOverrides() {
-        return ModelOverrideList.EMPTY;
+    public ItemOverrides getOverrides() {
+        return ItemOverrides.EMPTY;
     }
 
     @Override

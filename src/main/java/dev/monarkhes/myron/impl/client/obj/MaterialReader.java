@@ -2,9 +2,8 @@ package dev.monarkhes.myron.impl.client.obj;
 
 import dev.monarkhes.myron.impl.client.model.MyronMaterial;
 import net.fabricmc.fabric.api.renderer.v1.material.BlendMode;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
-
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
@@ -15,7 +14,7 @@ public class MaterialReader {
 
     static {
         register((tokenizer, line, key, material) ->
-                material.setTexture(new Identifier(line.substring(key.length()).trim())),
+                material.setTexture(new ResourceLocation(line.substring(key.length()).trim())),
                 "map_Kd", "texture");
 
         register((tokenizer, line, key, material) ->

@@ -1,11 +1,11 @@
 plugins {
-    id 'fabric-loom' version '0.8-SNAPSHOT'
+    id 'fabric-loom' version '0.10-SNAPSHOT'
     id 'maven-publish'
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-sourceCompatibility = JavaVersion.VERSION_16
-targetCompatibility = JavaVersion.VERSION_16
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -31,7 +31,7 @@ tasks.remapJar.dependsOn shadowJar
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
@@ -39,6 +39,9 @@ dependencies {
     implementation(shadow("de.javagl:obj:${obj_version}"))
 }
 
+loom {
+    accessWidenerPath = file("src/main/resources/myron.accesswidener")
+}
 
 processResources {
     inputs.property "version", project.version
@@ -64,10 +67,6 @@ tasks.withType(JavaCompile).configureEach {
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = "sources"
     from sourceSets.main.allSource
-}
-
-minecraft {
-    accessWidener "src/main/resources/myron.accesswidener"
 }
 
 jar {

@@ -4,14 +4,14 @@ import com.mojang.datafixers.util.Pair;
 import de.javagl.obj.Obj;
 import dev.monarkhes.myron.impl.client.Myron;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.ModelBakeSettings;
-import net.minecraft.client.render.model.ModelLoader;
-import net.minecraft.client.render.model.UnbakedModel;
-import net.minecraft.client.render.model.json.ModelTransformation;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -23,13 +23,13 @@ import java.util.function.Function;
 public class MyronUnbakedModel implements UnbakedModel {
     private final Obj obj;
     private final Map<String, MyronMaterial> materials;
-    private final Collection<SpriteIdentifier> textureDependencies;
-    private final SpriteIdentifier sprite;
-    private final ModelTransformation transform;
+    private final Collection<Material> textureDependencies;
+    private final Material sprite;
+    private final ItemTransforms transform;
     private final boolean isSideLit;
     private final boolean isBlock;
 
-    public MyronUnbakedModel(@Nullable Obj obj, @Nullable Map<String, MyronMaterial> materials, Collection<SpriteIdentifier> textureDependencies, SpriteIdentifier sprite, ModelTransformation modelTransformation, boolean isSideLit, boolean isBlock) {
+    public MyronUnbakedModel(@Nullable Obj obj, @Nullable Map<String, MyronMaterial> materials, Collection<Material> textureDependencies, Material sprite, ItemTransforms modelTransformation, boolean isSideLit, boolean isBlock) {
         this.obj = obj;
         this.materials = materials;
         this.textureDependencies = textureDependencies;
@@ -40,17 +40,17 @@ public class MyronUnbakedModel implements UnbakedModel {
     }
 
     @Override
-    public Collection<Identifier> getModelDependencies() {
+    public Collection<ResourceLocation> getDependencies() {
         return Collections.emptyList();
     }
 
     @Override
-    public Collection<SpriteIdentifier> getTextureDependencies(Function<Identifier, UnbakedModel> unbakedModelGetter, Set<Pair<String, String>> unresolvedTextureReferences) {
+    public Collection<Material> getMaterials(Function<ResourceLocation, UnbakedModel> unbakedModelGetter, Set<Pair<String, String>> unresolvedTextureReferences) {
         return this.textureDependencies;
     }
 
     @Override
-    public @Nullable BakedModel bake(ModelLoader loader, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings bakeSettings, Identifier modelId) {
+    public @Nullable BakedModel bake(ModelBakery loader, Function<Material, TextureAtlasSprite> textureGetter, ModelState bakeSettings, ResourceLocation modelId) {
         Mesh mesh;
 
         if (obj == null)

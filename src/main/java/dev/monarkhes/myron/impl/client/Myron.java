@@ -1,5 +1,7 @@
 package dev.monarkhes.myron.impl.client;
 
+import com.mojang.math.Transformation;
+import com.mojang.math.Vector3f;
 import de.javagl.obj.*;
 import dev.monarkhes.myron.impl.client.model.MyronMaterial;
 import dev.monarkhes.myron.impl.client.obj.MaterialReader;
@@ -14,15 +16,13 @@ import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.model.ModelBakeSettings;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.AffineTransformation;
-import net.minecraft.util.math.Vec3f;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -36,33 +36,33 @@ import java.util.function.Function;
 
 @Environment(EnvType.CLIENT)
 public class Myron implements ClientModInitializer {
-    private final static Vec3f NONE = new Vec3f();
-    private final static Vec3f BLOCKS = new Vec3f(0.5F, 0.5F, 0.5F);
+    private final static Vector3f NONE = new Vector3f();
+    private final static Vector3f BLOCKS = new Vector3f(0.5F, 0.5F, 0.5F);
 
     public static final String MOD_ID = "myron";
     public static final Logger LOGGER = LogManager.getLogger("Myron");
-    public static final Map<Identifier, Mesh> MESHES = new HashMap<>();
+    public static final Map<ResourceLocation, Mesh> MESHES = new HashMap<>();
 
     @Override
     public void onInitializeClient() {
         ModelLoadingRegistry.INSTANCE.registerResourceProvider(ObjLoader::new);
         ModelLoadingRegistry.INSTANCE.registerVariantProvider(ObjLoader::new);
         ModelLoadingRegistry.INSTANCE.registerModelProvider((manager, out) -> {
-            Collection<Identifier> ids = new HashSet<>();
+            Collection<ResourceLocation> ids = new HashSet<>();
 
-            Collection<Identifier> candidates = new ArrayList<>();
-            candidates.addAll(manager.findResources("models/block", path -> true));
-            candidates.addAll(manager.findResources("models/item", path -> true));
-            candidates.addAll(manager.findResources("models/misc", path -> true));
+            Collection<ResourceLocation> candidates = new ArrayList<>();
+            candidates.addAll(manager.listResources("models/block", path -> true));
+            candidates.addAll(manager.listResources("models/item", path -> true));
+            candidates.addAll(manager.listResources("models/misc", path -> true));
 
-            for (Identifier id : candidates) {
+            for (ResourceLocation id : candidates) {
                 if (id.getPath().endsWith(".obj")) {
                     ids.add(id);
-                    ids.add(new Identifier(id.getNamespace(), id.getPath().substring(0, id.getPath().indexOf(".obj"))));
+                    ids.add(new ResourceLocation(id.getNamespace(), id.getPath().substring(0, id.getPath().indexOf(".obj"))));
                 } else {
-                    Identifier test = new Identifier(id.getNamespace(), id.getPath() + ".obj");
+                    ResourceLocation test = new ResourceLocation(id.getNamespace(), id.getPath() + ".obj");
 
-                    if (manager.containsResource(test)) {
+                    if (manager.hasResource(test)) {
                         ids.add(id);
                     }
                 }
@@ -73,7 +73,7 @@ public class Myron implements ClientModInitializer {
                     String path = id.getPath();
 
                     if (path.startsWith("models/")) {
-                        out.accept(new Identifier(id.getNamespace(), path.substring("models/".length())));
+                        out.accept(new ResourceLocation(id.getNamespace(), path.substring("models/".length())));
                     }
 
                     out.accept(id);
@@ -84,18 +84,18 @@ public class Myron implements ClientModInitializer {
         LOGGER.info("Myron Initialized!");
     }
 
-    public static @Nullable Mesh load(Identifier modelPath, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings bakeSettings, boolean isBlock) {
-        ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
+    public static @Nullable Mesh load(ResourceLocation modelPath, Function<Material, TextureAtlasSprite> textureGetter, ModelState bakeSettings, boolean isBlock) {
+        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
         if (!modelPath.getPath().endsWith(".obj")) {
-            modelPath = new Identifier(modelPath.getNamespace(), modelPath.getPath() + ".obj");
+            modelPath = new ResourceLocation(modelPath.getNamespace(), modelPath.getPath() + ".obj");
         }
 
         if (!modelPath.getPath().startsWith("models/")) {
-            modelPath = new Identifier(modelPath.getNamespace(), "models/" + modelPath.getPath());
+            modelPath = new ResourceLocation(modelPath.getNamespace(), "models/" + modelPath.getPath());
         }
 
-        if (resourceManager.containsResource(modelPath)) {
+        if (resourceManager.hasResource(modelPath)) {
             try {
                 InputStream inputStream = resourceManager.getResource(modelPath).getInputStream();
                 Obj obj = ObjReader.read(inputStream);
@@ -110,15 +110,15 @@ public class Myron implements ClientModInitializer {
         return null;
     }
 
-    public static Map<String, MyronMaterial> getMaterials(ResourceManager resourceManager, Identifier identifier, Obj obj) throws IOException {
+    public static Map<String, MyronMaterial> getMaterials(ResourceManager resourceManager, ResourceLocation identifier, Obj obj) throws IOException {
         Map<String, MyronMaterial> materials = new LinkedHashMap<>();
 
         for (String s : obj.getMtlFileNames()) {
             String path = identifier.getPath();
             path = path.substring(0, path.lastIndexOf('/') + 1) + s;
-            Identifier resource = new Identifier(identifier.getNamespace(), path);
+            ResourceLocation resource = new ResourceLocation(identifier.getNamespace(), path);
 
-            if (resourceManager.containsResource(resource)) {
+            if (resourceManager.hasResource(resource)) {
                 MaterialReader.read(new BufferedReader(
                         new InputStreamReader(resourceManager.getResource(resource).getInputStream())))
                         .forEach(material -> materials.put(material.name, material));
@@ -130,7 +130,7 @@ public class Myron implements ClientModInitializer {
         return materials;
     }
 
-    public static @Nullable Mesh build(Obj obj, Map<String, MyronMaterial> materials, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings bakeSettings, boolean isBlock) {
+    public static @Nullable Mesh build(Obj obj, Map<String, MyronMaterial> materials, Function<Material, TextureAtlasSprite> textureGetter, ModelState bakeSettings, boolean isBlock) {
         Renderer renderer = RendererAccess.INSTANCE.getRenderer();
 
         if (renderer == null) return null;
@@ -147,7 +147,7 @@ public class Myron implements ClientModInitializer {
             }
 
             int materialColor = material.getColor();
-            Sprite sprite = textureGetter.apply(new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, material.getTexture()));
+            TextureAtlasSprite sprite = textureGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, material.getTexture()));
 
             for (int faceIndex = 0; faceIndex < group.getNumFaces(); ++faceIndex) {
                 face(renderer, emitter, group, group.getFace(faceIndex), material, materialColor, sprite, bakeSettings, isBlock);
@@ -157,7 +157,7 @@ public class Myron implements ClientModInitializer {
         return builder.build();
     }
 
-    private static void face(Renderer renderer, QuadEmitter emitter, Obj group, ObjFace face, MyronMaterial material, int materialColor, Sprite sprite, ModelBakeSettings settings, boolean isBlock) {
+    private static void face(Renderer renderer, QuadEmitter emitter, Obj group, ObjFace face, MyronMaterial material, int materialColor, TextureAtlasSprite sprite, ModelState settings, boolean isBlock) {
         if (face.getNumVertices() <= 4) {
             for (int vertex = 0; vertex < face.getNumVertices(); ++vertex) {
                 vertex(emitter, group, face, vertex, settings, isBlock);
@@ -171,9 +171,9 @@ public class Myron implements ClientModInitializer {
                     ? group.getTexCoord(face.getTexCoordIndex(0))
                     : null;
 
-            Vec3f pos = of(group.getVertex(face.getVertexIndex(0)));
+            Vector3f pos = of(group.getVertex(face.getVertexIndex(0)));
             pos.add(isBlock ? BLOCKS : NONE);
-            Vec3f normal = of(group.getNormal(face.getNormalIndex(0)));
+            Vector3f normal = of(group.getNormal(face.getNormalIndex(0)));
 
             rotate(settings, pos, normal);
 
@@ -234,7 +234,7 @@ public class Myron implements ClientModInitializer {
         }
     }
 
-    private static void emit(Renderer renderer, QuadEmitter emitter, MyronMaterial material, int materialColor, Sprite sprite, ModelBakeSettings settings) {
+    private static void emit(Renderer renderer, QuadEmitter emitter, MyronMaterial material, int materialColor, TextureAtlasSprite sprite, ModelState settings) {
         emitter.material(material.getMaterial(renderer));
         emitter.spriteColor(0, materialColor, materialColor, materialColor, materialColor);
         emitter.colorIndex(material.getTintIndex());
@@ -249,13 +249,13 @@ public class Myron implements ClientModInitializer {
         emitter.emit();
     }
 
-    private static void vertex(QuadEmitter emitter, Obj group, ObjFace face, int vertex, ModelBakeSettings settings, boolean isBlock) {
-        Vec3f pos = of(group.getVertex(face.getVertexIndex(vertex)));
+    private static void vertex(QuadEmitter emitter, Obj group, ObjFace face, int vertex, ModelState settings, boolean isBlock) {
+        Vector3f pos = of(group.getVertex(face.getVertexIndex(vertex)));
 
         // Used to offset blocks
         pos.add(isBlock ? BLOCKS : NONE);
 
-        Vec3f normal = face.containsNormalIndices()
+        Vector3f normal = face.containsNormalIndices()
                 ? of(group.getNormal(face.getNormalIndex(vertex)))
                 : calculateNormal(group, face);
 
@@ -278,48 +278,48 @@ public class Myron implements ClientModInitializer {
         }
     }
 
-    private static Vec3f calculateNormal(Obj group, ObjFace face) {
-        Vec3f p1 = of(group.getVertex(face.getVertexIndex(0)));
-        Vec3f v1 = of(group.getVertex(face.getVertexIndex(1)));
-        Vec3f v2 = of(group.getVertex(face.getVertexIndex(2)));
+    private static Vector3f calculateNormal(Obj group, ObjFace face) {
+        Vector3f p1 = of(group.getVertex(face.getVertexIndex(0)));
+        Vector3f v1 = of(group.getVertex(face.getVertexIndex(1)));
+        Vector3f v2 = of(group.getVertex(face.getVertexIndex(2)));
 
-        v1.subtract(p1);
-        v2.subtract(p1);
+        v1.sub(p1);
+        v2.sub(p1);
 
-        return new Vec3f(
-                v1.getY() * v2.getZ() - v1.getZ() * v2.getY(),
-                v1.getZ() * v2.getX() - v1.getX() * v2.getZ(),
-                v1.getX() * v2.getY() - v1.getY() * v2.getX()
+        return new Vector3f(
+                v1.y() * v2.z() - v1.z() * v2.y(),
+                v1.z() * v2.x() - v1.x() * v2.z(),
+                v1.x() * v2.y() - v1.y() * v2.x()
         );
     }
 
-    private static void rotate(ModelBakeSettings settings, Vec3f pos, Vec3f normal) {
-        if (settings.getRotation() != AffineTransformation.identity()) {
+    private static void rotate(ModelState settings, Vector3f pos, Vector3f normal) {
+        if (settings.getRotation() != Transformation.identity()) {
             pos.add(-0.5F, -0.5F, -0.5F);
-            pos.rotate(settings.getRotation().getRotation2());
+            pos.transform(settings.getRotation().getLeftRotation());
             pos.add(0.5f, 0.5f, 0.5f);
 
-            normal.rotate(settings.getRotation().getRotation2());
+            normal.transform(settings.getRotation().getLeftRotation());
         }
     }
 
-    private static void vertex(QuadEmitter emitter, int vertex, Vec3f pos, Vec3f normal, float u, float v) {
+    private static void vertex(QuadEmitter emitter, int vertex, Vector3f pos, Vector3f normal, float u, float v) {
         emitter.pos(vertex, pos);
         emitter.normal(vertex, normal);
         emitter.sprite(vertex, 0, u, v);
     }
 
-    private static Vec3f of(FloatTuple tuple) {
-        return new Vec3f(tuple.getX(), tuple.getY(), tuple.getZ());
+    private static Vector3f of(FloatTuple tuple) {
+        return new Vector3f(tuple.getX(), tuple.getY(), tuple.getZ());
     }
 
     private static class Vertex {
-        public final Vec3f pos;
-        public final Vec3f normal;
+        public final Vector3f pos;
+        public final Vector3f normal;
         public final float u;
         public final float v;
 
-        private Vertex(Vec3f pos, Vec3f normal, float u, float v) {
+        private Vertex(Vector3f pos, Vector3f normal, float u, float v) {
             this.pos = pos;
             this.normal = normal;
             this.u = u;

@@ -4,22 +4,22 @@ import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.material.BlendMode;
 import net.fabricmc.fabric.api.renderer.v1.material.MaterialFinder;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 public class MyronMaterial {
     public static final MyronMaterial DEFAULT = new MyronMaterial("missing_texture");
 
     static {
-        DEFAULT.setTexture(new Identifier(""));
+        DEFAULT.setTexture(new ResourceLocation(""));
     }
 
     public final String name;
 
     private int tintIndex = -1;
     private int color = -1;
-    private Identifier texture;
+    private ResourceLocation texture;
     private BlendMode blendMode = BlendMode.DEFAULT;
 
     private boolean uvLocked = false;
@@ -35,7 +35,7 @@ public class MyronMaterial {
         this.name = name;
     }
 
-    public void setTexture(Identifier textureId) {
+    public void setTexture(ResourceLocation textureId) {
         this.texture = textureId;
     }
 
@@ -62,7 +62,7 @@ public class MyronMaterial {
         this.tintIndex = tintIndex;
     }
 
-    public Identifier getTexture() {
+    public ResourceLocation getTexture() {
         return this.texture;
     }
 

@@ -2,13 +2,13 @@ package dev.monarkhes.myron.api;
 
 import dev.monarkhes.myron.impl.mixin.BakedModelManagerAccessor;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.ModelBakeSettings;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.ModelIdentifier;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
@@ -16,15 +16,15 @@ import java.util.function.Function;
 public class Myron {
     /**
      * Gets a baked model by its ID.
-     * Useful for models that aren't associated with blocks/items, and therefore don't have a {@link ModelIdentifier}.
+     * Useful for models that aren't associated with blocks/items, and therefore don't have a {@link ModelResourceLocation}.
      * @param id the id of the model to fetch
      * @return the model itself
      */
-    public static @Nullable BakedModel getModel(Identifier id) {
-        return ((BakedModelManagerAccessor) MinecraftClient.getInstance().getBakedModelManager()).getModels().get(id);
+    public static @Nullable BakedModel getModel(ResourceLocation id) {
+        return ((BakedModelManagerAccessor) Minecraft.getInstance().getModelManager()).getBakedRegistry().get(id);
     }
 
-    public static @Nullable Mesh load(Identifier modelPath, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings bakeSettings, boolean isBlock) {
+    public static @Nullable Mesh load(ResourceLocation modelPath, Function<Material, TextureAtlasSprite> textureGetter, ModelState bakeSettings, boolean isBlock) {
         return dev.monarkhes.myron.impl.client.Myron.load(modelPath, textureGetter, bakeSettings, isBlock);
     }
 }
