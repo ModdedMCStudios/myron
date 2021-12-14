@@ -5,25 +5,23 @@ import de.javagl.obj.ObjReader;
 import dev.monarkhes.myron.impl.client.Myron;
 import dev.monarkhes.myron.impl.client.model.MyronMaterial;
 import dev.monarkhes.myron.impl.client.model.MyronUnbakedModel;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 
 public class AbstractObjLoader {
-    public static final Material DEFAULT_SPRITE = new Material(TextureAtlas.LOCATION_BLOCKS, null);
+    public static final Material DEFAULT_SPRITE = new Material(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation());
 
     protected @Nullable UnbakedModel loadModel(
             ResourceManager resourceManager, ResourceLocation identifier, ItemTransforms transformation, boolean isSideLit) {

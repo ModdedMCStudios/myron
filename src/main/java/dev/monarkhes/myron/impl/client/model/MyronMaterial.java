@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.material.BlendMode;
 import net.fabricmc.fabric.api.renderer.v1.material.MaterialFinder;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
@@ -63,6 +64,8 @@ public class MyronMaterial {
     }
 
     public ResourceLocation getTexture() {
+        if(this.texture == null)
+            return MissingTextureAtlasSprite.getLocation();
         return this.texture;
     }
 
