@@ -5,13 +5,6 @@ import de.javagl.obj.ObjReader;
 import dev.monarkhes.myron.impl.client.Myron;
 import dev.monarkhes.myron.impl.client.model.MyronMaterial;
 import dev.monarkhes.myron.impl.client.model.MyronUnbakedModel;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.client.resources.model.Material;
-import net.minecraft.client.resources.model.UnbakedModel;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -19,6 +12,13 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 public class AbstractObjLoader {
     public static final Material DEFAULT_SPRITE = new Material(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation());
@@ -35,10 +35,11 @@ public class AbstractObjLoader {
             identifier = new ResourceLocation(identifier.getNamespace(), "models/" + identifier.getPath());
         }
 
-        if (resourceManager.hasResource(identifier)) {
+        var resource = resourceManager.getResource(identifier);
+        if (resource.isPresent()) {
             try {
 
-                InputStream inputStream = resourceManager.getResource(identifier).getInputStream();
+                InputStream inputStream = resource.get().open();
                 Obj obj = ObjReader.read(inputStream);
                 Map<String, MyronMaterial> materials = Myron.getMaterials(resourceManager, identifier, obj);
 

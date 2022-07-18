@@ -37,25 +37,25 @@ public class MyronBakedModel implements BakedModel, FabricBakedModel {
     }
 
     @Override
-    public void emitBlockQuads(BlockAndTintGetter blockRenderView, BlockState blockState, BlockPos blockPos, Supplier<Random> supplier, RenderContext renderContext) {
+    public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<net.minecraft.util.RandomSource> randomSupplier, RenderContext context) {
         if (this.mesh != null) {
-            renderContext.meshConsumer().accept(mesh);
+            context.meshConsumer().accept(mesh);
         } else {
-            Myron.LOGGER.warn("Mesh is null while emitting block quads for block {}", blockState.getBlock().getName().getContents());
+            Myron.LOGGER.warn("Mesh is null while emitting block quads for block {}", state.getBlock().getName().getContents());
         }
     }
 
     @Override
-    public void emitItemQuads(ItemStack itemStack, Supplier<Random> supplier, RenderContext renderContext) {
+    public void emitItemQuads(ItemStack stack, Supplier<net.minecraft.util.RandomSource> randomSupplier, RenderContext context) {
         if (this.mesh != null) {
-            renderContext.meshConsumer().accept(mesh);
+            context.meshConsumer().accept(mesh);
         } else {
-            Myron.LOGGER.warn("Mesh is null while emitting block quads for item {}", itemStack.getItem().getDescription().getContents());
+            Myron.LOGGER.warn("Mesh is null while emitting block quads for item {}", stack.getItem().getDescription().getContents());
         }
     }
 
-    // Since FabricBakedModels defer to use `emitBlockQuads` and `emitItemQuads`, this will only be called if
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction face, Random random) {
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction face, net.minecraft.util.RandomSource random) {
         if (this.backupQuads == null) {
             this.backupQuads = new ArrayList<>();
 

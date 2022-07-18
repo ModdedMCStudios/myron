@@ -51,9 +51,9 @@ public class Myron implements ClientModInitializer {
             Collection<ResourceLocation> ids = new HashSet<>();
 
             Collection<ResourceLocation> candidates = new ArrayList<>();
-            candidates.addAll(manager.listResources("models/block", path -> true));
-            candidates.addAll(manager.listResources("models/item", path -> true));
-            candidates.addAll(manager.listResources("models/misc", path -> true));
+            candidates.addAll(manager.listResources("models/block", path -> true).keySet());
+            candidates.addAll(manager.listResources("models/item", path -> true).keySet());
+            candidates.addAll(manager.listResources("models/misc", path -> true).keySet());
 
             for (ResourceLocation id : candidates) {
                 if (id.getPath().endsWith(".obj")) {
@@ -62,7 +62,7 @@ public class Myron implements ClientModInitializer {
                 } else {
                     ResourceLocation test = new ResourceLocation(id.getNamespace(), id.getPath() + ".obj");
 
-                    if (manager.hasResource(test)) {
+                    if (manager.getResource(test).isPresent()) {
                         ids.add(id);
                     }
                 }
@@ -95,9 +95,10 @@ public class Myron implements ClientModInitializer {
             modelPath = new ResourceLocation(modelPath.getNamespace(), "models/" + modelPath.getPath());
         }
 
-        if (resourceManager.hasResource(modelPath)) {
+        var resource = resourceManager.getResource(modelPath);
+        if (resource.isPresent()) {
             try {
-                InputStream inputStream = resourceManager.getResource(modelPath).getInputStream();
+                InputStream inputStream = resource.get().open();
                 Obj obj = ObjReader.read(inputStream);
 
                 Map<String, MyronMaterial> materials = getMaterials(resourceManager, modelPath, obj);
@@ -118,9 +119,10 @@ public class Myron implements ClientModInitializer {
             path = path.substring(0, path.lastIndexOf('/') + 1) + s;
             ResourceLocation resource = new ResourceLocation(identifier.getNamespace(), path);
 
-            if (resourceManager.hasResource(resource)) {
+            var res = resourceManager.getResource(resource);
+            if (res.isPresent()) {
                 MaterialReader.read(new BufferedReader(
-                        new InputStreamReader(resourceManager.getResource(resource).getInputStream())))
+                        new InputStreamReader(res.get().open())))
                         .forEach(material -> materials.put(material.name, material));
             } else {
                 Myron.LOGGER.warn("Texture does not exist: {}", resource);

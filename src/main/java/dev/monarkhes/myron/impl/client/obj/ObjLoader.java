@@ -44,11 +44,12 @@ public class ObjLoader extends AbstractObjLoader implements ModelResourceProvide
                 modelIdentifier.getNamespace(),
                 "models/item/" + modelIdentifier.getPath () + ".json");
 
-        if (!modelIdentifier.getVariant().equals("inventory") || !this.resourceManager.hasResource(resource)) {
+        var res = this.resourceManager.getResource(resource);
+        if (!modelIdentifier.getVariant().equals("inventory") || res.isEmpty()) {
             return null;
         }
 
-        try (Reader reader = new InputStreamReader(this.resourceManager.getResource(resource).getInputStream())) {
+        try (Reader reader = new InputStreamReader(res.get().open())) {
             JsonObject rawModel = GsonHelper.parse(reader);
 
             JsonElement model = rawModel.get("model");
@@ -86,8 +87,9 @@ public class ObjLoader extends AbstractObjLoader implements ModelResourceProvide
     }
 
     private ItemTransforms getTransformation(ResourceLocation model) throws IOException {
-        if (this.resourceManager.hasResource(model)) {
-            Reader reader = new InputStreamReader(this.resourceManager.getResource(model).getInputStream());
+        var res = this.resourceManager.getResource(model);
+        if (res.isPresent()) {
+            Reader reader = new InputStreamReader(res.get().open());
             return getTransformation(GsonHelper.parse(reader));
         } else {
             return ItemTransforms.NO_TRANSFORMS;
